@@ -3,63 +3,63 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-var mongodb = require('mongodb');
-var MongoClient = mongodb.MongoClient;
-var session = require('express-session');
-var fileStore = require('session-file-store')(session);
+var mongodb = require('mongodb');       // 추가
+var MongoClient = mongodb.MongoClient;  // 추가
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var leaderboardRouter = require('./routes/leaderboard');
+const session = require('express-session');
+var fileStore = require('session-file-store')(session);
 
 var app = express();
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'session-login', // 보안을 위해 환경변수 사용 권장
+  secret: process.env.SESSION_SECRET || 'session-login',
   resave: false,
-  saveUninitialized: false, // 세션이 필요할 때만 저장하도록 false로 설정
+  saveUninitialized: false,
   store: new fileStore({
-    path: './sessions', // 세션 파일 저장 경로 지정
-    ttl: 24 * 60 * 60, // 세션 유효기간 설정 (1일)
-    reapInterval: 60 * 60 // 만료된 세션 정리 간격 (1시간)
+    path: './sessions',
+    ttl: 24 * 60 * 60,
+    reapInterval: 60 * 60
   }),
   cookie: {
-    httpOnly: true, // XSS 공격 방지
-    secure: process.env.NODE_ENV === 'production', // HTTPS 환경에서만 쿠키 전송
-    maxAge: 24 * 60 * 60 * 1000 // 쿠키 유효기간 1일
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
+// MongoDB
 async function connectDB() {
-  var databaseUrl = "mongodb+srv://goyadb:ji04sksb@cluster0.fj54l.mongodb.net/tic_tac_toe/?retryWrites=true&w=majority&appName=Cluster0"
+  var databaseURL = "mongodb+srv://<db_username>:<db_password>@cluster0.fj54l.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
   try {
-    const database = await MongoClient.connect(databaseUrl, {
+    const database = await MongoClient.connect(databaseURL, {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
-    console.log("DB 연결 완료: " + databaseUrl);
+    console.log("DB 연결 완료: " + databaseURL);
     app.set('database', database.db('tictactoe'));
-    
+
     // 연결 종료 처리
-    process.on('SIGINT', async () => {
+    process.on("SIGINT", async () => {
       await database.close();
-      console.log('DB 연결 종료');
+      console.log("DB 연결 종료");
       process.exit(0);
     });
-
   } catch (err) {
-    console.error("DB 연결 실패:", err);
-    // 에러 발생 시 서버 종료
+    console.error("DB 연결 실패: " + err);
     process.exit(1);
   }
 }
 
-// 서버 시작 시 DB 연결
 connectDB().catch(err => {
-  console.error("초기 DB 연결 실패:", err);
+  console.error("초기 DB 연결 실패: " + err);
   process.exit(1);
 });
+
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));

@@ -23,7 +23,7 @@ app.set('port', port);
 var server = http.createServer(app);
 
 /**
- * Create Socket.io server
+ * 게임 서버 실행
  */
 game(server);
 
